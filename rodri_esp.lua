@@ -1,12 +1,3 @@
---[[
-    UNIVERSAL AIMBOT + ESP (ENEMY) + MENU [J]
-    - ESP: Destaca só inimigos, boneco inteiro em vermelho, nome em vermelho.
-    - Menu: Minimizar/abrir com J, arrastável
-    - Aimbot: X | ESP: C
-    Por Copilot | Educacional/teste local!
-]]
-
--- Serviços
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
