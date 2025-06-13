@@ -1,202 +1,204 @@
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 
-local localPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TudoEmUmGui"
+ScreenGui.Parent = game.CoreGui
 
--- Configurações otimizadas para Big Paintball
-local ESP_CONFIG = {
-    Color = Color3.fromRGB(255, 50, 50),
-    FillTransparency = 0.7,
-    OutlineColor = Color3.new(1, 1, 1),
-    TextSize = 11,
-    TextOffset = Vector3.new(0, 2.5, 0),
-    RefreshRate = 0.3,
-    MaxDistance = 2000,
-    RecheckDelay = 1.5 -- Tempo para verificar personagens desaparecidos
-}
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0,240,0,180)
+MainFrame.Position = UDim2.new(0,50,0,80)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30,30,40)
+MainFrame.BorderSizePixel = 0
 
--- Sistema de cache avançado
-local ESPStore = {
-    Active = {},
-    Pending = {},
-    Connections = {}
-}
+local Title = Instance.new("TextLabel")
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1,0,0,32)
+Title.Position = UDim2.new(0,0,0,0)
+Title.BackgroundColor3 = Color3.fromRGB(60,60,80)
+Title.Text = "Aimbot & ESP"
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.BorderSizePixel = 0
 
--- Função para criar ESP persistente
-local function createPersistentESP(player)
-    if player == localPlayer then return end
+local MinButton = Instance.new("TextButton")
+MinButton.Parent = MainFrame
+MinButton.Size = UDim2.new(0,32,0,32)
+MinButton.Position = UDim2.new(1,-32,0,0)
+MinButton.BackgroundColor3 = Color3.fromRGB(40,40,70)
+MinButton.Text = "-"
+MinButton.TextColor3 = Color3.fromRGB(255,255,255)
+MinButton.Font = Enum.Font.GothamBold
+MinButton.TextSize = 20
+MinButton.BorderSizePixel = 0
 
-    local function applyESP(character)
-        if not character or ESPStore.Active[character] then return end
+local OpenButton = Instance.new("TextButton")
+OpenButton.Parent = ScreenGui
+OpenButton.Size = UDim2.new(0,120,0,32)
+OpenButton.Position = UDim2.new(0,50,0,80)
+OpenButton.BackgroundColor3 = Color3.fromRGB(60,60,80)
+OpenButton.Text = "Abrir Aimbot&ESP"
+OpenButton.TextColor3 = Color3.fromRGB(255,255,255)
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.TextSize = 15
+OpenButton.Visible = false
+OpenButton.BorderSizePixel = 0
 
-        -- Criação do highlight
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "PaintballESP_"..player.UserId
-        highlight.FillColor = ESP_CONFIG.Color
-        highlight.OutlineColor = ESP_CONFIG.OutlineColor
-        highlight.FillTransparency = ESP_CONFIG.FillTransparency
-        highlight.OutlineTransparency = 0
+local AimbotToggle = Instance.new("TextButton")
+AimbotToggle.Parent = MainFrame
+AimbotToggle.Size = UDim2.new(1,-40,0,40)
+AimbotToggle.Position = UDim2.new(0,20,0,48)
+AimbotToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
+AimbotToggle.Text = "Aimbot: OFF"
+AimbotToggle.TextColor3 = Color3.fromRGB(255,255,255)
+AimbotToggle.Font = Enum.Font.Gotham
+AimbotToggle.TextSize = 16
+AimbotToggle.BorderSizePixel = 0
 
-        -- Criação do billboard
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "PaintballESPInfo"
-        billboard.Size = UDim2.new(4, 0, 1.2, 0)
-        billboard.StudsOffset = ESP_CONFIG.TextOffset
-        billboard.AlwaysOnTop = true
-        billboard.MaxDistance = ESP_CONFIG.MaxDistance
+local ESPToggle = Instance.new("TextButton")
+ESPToggle.Parent = MainFrame
+ESPToggle.Size = UDim2.new(1,-40,0,40)
+ESPToggle.Position = UDim2.new(0,20,0,98)
+ESPToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
+ESPToggle.Text = "ESP: OFF"
+ESPToggle.TextColor3 = Color3.fromRGB(255,255,255)
+ESPToggle.Font = Enum.Font.Gotham
+ESPToggle.TextSize = 16
+ESPToggle.BorderSizePixel = 0
 
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Text = player.Name
-        textLabel.TextColor3 = ESP_CONFIG.Color
-        textLabel.TextSize = ESP_CONFIG.TextSize
-        textLabel.Font = Enum.Font.SourceSansBold
-        textLabel.TextStrokeTransparency = 0.4
-        textLabel.BackgroundTransparency = 1
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
-        textLabel.Parent = billboard
+-- Variáveis
+local AimbotON = false
+local ESPON = false
+local ESPBoxes = {}
 
-        -- Sistema de verificação contínua
-        local checkConnection
-        local function verifyExistence()
-            if not character.Parent then
-                highlight.Enabled = false
-                billboard.Enabled = false
-                ESPStore.Pending[character] = true
-                return
-            end
+-- Minimizar/restaurar
+MinButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenButton.Visible = true
+end)
+OpenButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenButton.Visible = false
+end)
 
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid and humanoid.Health <= 0 then
-                highlight.Enabled = false
-                billboard.Enabled = false
-                ESPStore.Pending[character] = true
-                return
-            end
+-- Toggle Aimbot
+AimbotToggle.MouseButton1Click:Connect(function()
+    AimbotON = not AimbotON
+    AimbotToggle.Text = "Aimbot: " .. (AimbotON and "ON" or "OFF")
+    AimbotToggle.BackgroundColor3 = AimbotON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
+end)
 
-            highlight.Enabled = true
-            billboard.Enabled = true
-            ESPStore.Pending[character] = nil
+-- Toggle ESP
+ESPToggle.MouseButton1Click:Connect(function()
+    ESPON = not ESPON
+    ESPToggle.Text = "ESP: " .. (ESPON and "ON" or "OFF")
+    ESPToggle.BackgroundColor3 = ESPON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
+    if not ESPON then
+        for _,v in pairs(ESPBoxes) do if v then v:Destroy() end end
+        ESPBoxes = {}
+    end
+end)
+
+-- Função ESP
+function CriarESP(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    if ESPBoxes[player] then
+        if ESPBoxes[player].Adornee ~= char:FindFirstChild("Head") then
+            ESPBoxes[player]:Destroy()
+            ESPBoxes[player] = nil
         end
-
-        checkConnection = RunService.Heartbeat:Connect(verifyExistence)
-
-        -- Armazenamento
-        ESPStore.Active[character] = {
-            Highlight = highlight,
-            Billboard = billboard,
-            Connection = checkConnection,
-            LastValidPosition = character:GetPivot().Position
-        }
-
-        -- Parenteamento
-        highlight.Parent = character
-        billboard.Parent = character:WaitForChild("Head", 5) or character:WaitForChild("UpperTorso", 5) or character.PrimaryPart or character
-
-        -- Conexão para limpeza
-        ESPStore.Connections[character] = character.AncestryChanged:Connect(function(_, parent)
-            if not parent then
-                ESPStore.Pending[character] = true
-            end
-        end)
     end
-
-    -- Monitorar personagem atual
-    if player.Character then
-        applyESP(player.Character)
+    if char:FindFirstChild("Head") and not ESPBoxes[player] then
+        local box = Instance.new("BillboardGui", ScreenGui)
+        box.Adornee = char.Head
+        box.Size = UDim2.new(0,100,0,30)
+        box.AlwaysOnTop = true
+        local label = Instance.new("TextLabel", box)
+        label.Size = UDim2.new(1,0,1,0)
+        label.BackgroundTransparency = 1
+        label.Text = player.Name
+        label.TextColor3 = Color3.fromRGB(255,80,80)
+        label.TextStrokeTransparency = 0.7
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 16
+        ESPBoxes[player] = box
     end
-
-    -- Monitorar novos personagens
-    ESPStore.Connections[player] = player.CharacterAdded:Connect(applyESP)
 end
 
--- Sistema de recuperação de ESPs perdidos
-local function recoverMissingESP()
-    for character, data in pairs(ESPStore.Active) do
-        if not character:IsDescendantOf(workspace) then
-            ESPStore.Pending[character] = true
-        end
-    end
-
-    for character, _ in pairs(ESPStore.Pending) do
-        if ESPStore.Active[character] then
-            for _, v in pairs(ESPStore.Active[character]) do
-                if typeof(v) == "RBXScriptConnection" then
-                    v:Disconnect()
-                elseif v:IsA("Instance") then
-                    v:Destroy()
+-- Função Aimbot
+function JogadorMaisProximo()
+    local prox, dist = nil, math.huge
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            local pos, onscreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+            if onscreen then
+                local mousePos = UIS:GetMouseLocation()
+                local d = (Vector2.new(pos.X,pos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
+                if d < dist and d < 200 then
+                    prox = p
+                    dist = d
                 end
             end
-            ESPStore.Active[character] = nil
         end
     end
+    return prox
 end
 
--- Atualizador principal
-local function updateESP()
-    -- Verificar jogadores existentes
-    for _, player in ipairs(Players:GetPlayers()) do
-        if not ESPStore.Connections[player] and player ~= localPlayer then
-            createPersistentESP(player)
+-- Loops
+RunService.RenderStepped:Connect(function()
+    -- ESP
+    if ESPON then
+        for _,p in ipairs(Players:GetPlayers()) do
+            pcall(function() CriarESP(p) end)
         end
     end
-
-    -- Tentar recuperar ESPs perdidos
-    recoverMissingESP()
-end
-
--- Inicialização
-for _, player in ipairs(Players:GetPlayers()) do
-    createPersistentESP(player)
-end
-
-Players.PlayerAdded:Connect(createPersistentESP)
-Players.PlayerRemoving:Connect(function(player)
-    if player.Character and ESPStore.Active[player.Character] then
-        for _, v in pairs(ESPStore.Active[player.Character]) do
-            if typeof(v) == "RBXScriptConnection" then
-                v:Disconnect()
-            elseif v:IsA("Instance") then
-                v:Destroy()
-            end
+    -- Remove ESP de quem saiu/morreu
+    for p,esp in pairs(ESPBoxes) do
+        if not p or not p.Parent or not p.Character or not p.Character:FindFirstChild("Head") then
+            if esp then esp:Destroy() end
+            ESPBoxes[p] = nil
         end
-        ESPStore.Active[player.Character] = nil
     end
-    if ESPStore.Connections[player] then
-        ESPStore.Connections[player]:Disconnect()
-        ESPStore.Connections[player] = nil
+    -- Aimbot
+    if AimbotON and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local alvo = JogadorMaisProximo()
+        if alvo and alvo.Character and alvo.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvo.Character.Head.Position)
+        end
     end
 end)
 
--- Loop de atualização
-local updateInterval = 0
-RunService.Heartbeat:Connect(function(delta)
-    updateInterval = updateInterval + delta
-    if updateInterval >= ESP_CONFIG.RefreshRate then
-        updateInterval = 0
-        updateESP()
+-- Arrastar a janela
+local dragging, dragInput, dragStart, startPos
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
     end
 end)
-
--- Sistema de limpeza
-local function cleanUp()
-    for character, data in pairs(ESPStore.Active) do
-        for _, v in pairs(data) do
-            if typeof(v) == "RBXScriptConnection" then
-                v:Disconnect()
-            elseif v:IsA("Instance") then
-                v:Destroy()
-            end
-        end
+Title.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
     end
-
-    for _, conn in pairs(ESPStore.Connections) do
-        conn:Disconnect()
+end)
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-
-    table.clear(ESPStore.Active)
-    table.clear(ESPStore.Pending)
-    table.clear(ESPStore.Connections)
-end
-
-script.Destroying:Connect(cleanUp)
+end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
