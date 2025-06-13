@@ -1,7 +1,6 @@
 --[[
-    Script Roblox Completo: Aimbot, ESP e GUI Minimizar
-    Menu: J | Aimbot: X | ESP: C
-    Por Copilot - Para estudo/testes locais!
+    Tudo em Um: Aimbot + ESP + GUI Minimizar (Roblox)
+    Criado por Copilot | Para fins educacionais e testes locais!
 ]]
 
 -- Serviços
@@ -48,10 +47,10 @@ MinButton.BorderSizePixel = 0
 
 local OpenButton = Instance.new("TextButton")
 OpenButton.Parent = ScreenGui
-OpenButton.Size = UDim2.new(0,140,0,32)
+OpenButton.Size = UDim2.new(0,120,0,32)
 OpenButton.Position = UDim2.new(0,50,0,80)
 OpenButton.BackgroundColor3 = Color3.fromRGB(60,60,80)
-OpenButton.Text = "Abrir Menu (J)"
+OpenButton.Text = "Abrir Aimbot&ESP"
 OpenButton.TextColor3 = Color3.fromRGB(255,255,255)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.TextSize = 15
@@ -63,7 +62,7 @@ AimbotToggle.Parent = MainFrame
 AimbotToggle.Size = UDim2.new(1,-40,0,40)
 AimbotToggle.Position = UDim2.new(0,20,0,48)
 AimbotToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
-AimbotToggle.Text = "Aimbot: OFF [X]"
+AimbotToggle.Text = "Aimbot: OFF"
 AimbotToggle.TextColor3 = Color3.fromRGB(255,255,255)
 AimbotToggle.Font = Enum.Font.Gotham
 AimbotToggle.TextSize = 16
@@ -74,7 +73,7 @@ ESPToggle.Parent = MainFrame
 ESPToggle.Size = UDim2.new(1,-40,0,40)
 ESPToggle.Position = UDim2.new(0,20,0,98)
 ESPToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
-ESPToggle.Text = "ESP: OFF [C]"
+ESPToggle.Text = "ESP: OFF"
 ESPToggle.TextColor3 = Color3.fromRGB(255,255,255)
 ESPToggle.Font = Enum.Font.Gotham
 ESPToggle.TextSize = 16
@@ -85,54 +84,28 @@ local AimbotON = false
 local ESPON = false
 local ESPBoxes = {}
 
--- Funções auxiliares
-local function updateAimbotButton()
-    AimbotToggle.Text = "Aimbot: " .. (AimbotON and "ON" or "OFF") .. " [X]"
-    AimbotToggle.BackgroundColor3 = AimbotON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
-end
-local function updateESPButton()
-    ESPToggle.Text = "ESP: " .. (ESPON and "ON" or "OFF") .. " [C]"
-    ESPToggle.BackgroundColor3 = ESPON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
-end
-
 -- Minimizar/restaurar
-local function setMenuVisible(state)
-    MainFrame.Visible = state
-    OpenButton.Visible = not state
-end
 MinButton.MouseButton1Click:Connect(function()
-    setMenuVisible(false)
+    MainFrame.Visible = false
+    OpenButton.Visible = true
 end)
 OpenButton.MouseButton1Click:Connect(function()
-    setMenuVisible(true)
+    MainFrame.Visible = true
+    OpenButton.Visible = false
 end)
 
--- Atalhos do teclado
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.J then
-        setMenuVisible(not MainFrame.Visible)
-    elseif input.KeyCode == Enum.KeyCode.X then
-        AimbotON = not AimbotON
-        updateAimbotButton()
-    elseif input.KeyCode == Enum.KeyCode.C then
-        ESPON = not ESPON
-        updateESPButton()
-        if not ESPON then
-            for _,v in pairs(ESPBoxes) do if v then v:Destroy() end end
-            ESPBoxes = {}
-        end
-    end
-end)
-
--- Toggle Aimbot/ESP pelos botões
+-- Toggle Aimbot
 AimbotToggle.MouseButton1Click:Connect(function()
     AimbotON = not AimbotON
-    updateAimbotButton()
+    AimbotToggle.Text = "Aimbot: " .. (AimbotON and "ON" or "OFF")
+    AimbotToggle.BackgroundColor3 = AimbotON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
 end)
+
+-- Toggle ESP
 ESPToggle.MouseButton1Click:Connect(function()
     ESPON = not ESPON
-    updateESPButton()
+    ESPToggle.Text = "ESP: " .. (ESPON and "ON" or "OFF")
+    ESPToggle.BackgroundColor3 = ESPON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
     if not ESPON then
         for _,v in pairs(ESPBoxes) do if v then v:Destroy() end end
         ESPBoxes = {}
@@ -235,7 +208,3 @@ UIS.InputEnded:Connect(function(input)
         dragging = false
     end
 end)
-
--- Inicialização dos botões
-updateAimbotButton()
-updateESPButton()
