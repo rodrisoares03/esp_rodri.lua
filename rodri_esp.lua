@@ -67,7 +67,7 @@ ESPToggle.Parent = MainFrame
 ESPToggle.Size = UDim2.new(1,-40,0,40)
 ESPToggle.Position = UDim2.new(0,20,0,98)
 ESPToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
-ESPToggle.Text = "ESP: OFF [C]"
+ESPToggle.Text = "ESP: OFF [Z]"
 ESPToggle.TextColor3 = Color3.fromRGB(255,255,255)
 ESPToggle.Font = Enum.Font.Gotham
 ESPToggle.TextSize = 16
@@ -84,7 +84,7 @@ local function updateAimbotButton()
     AimbotToggle.BackgroundColor3 = AimbotON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
 end
 local function updateESPButton()
-    ESPToggle.Text = "ESP: " .. (ESPON and "ON" or "OFF") .. " [C]"
+    ESPToggle.Text = "ESP: " .. (ESPON and "ON" or "OFF") .. " [Z]"
     ESPToggle.BackgroundColor3 = ESPON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
 end
 
@@ -108,7 +108,7 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Enum.KeyCode.X then
         AimbotON = not AimbotON
         updateAimbotButton()
-    elseif input.KeyCode == Enum.KeyCode.C then
+    elseif input.KeyCode == Enum.KeyCode.Z then
         ESPON = not ESPON
         updateESPButton()
         if not ESPON then
