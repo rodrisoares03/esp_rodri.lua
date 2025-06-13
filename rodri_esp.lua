@@ -132,31 +132,29 @@ ESPToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Função ESP
+-- Função ESP aprimorada usando Highlight (wallhack)
 function CriarESP(player)
     if player == LocalPlayer then return end
     local char = player.Character
     if not char then return end
+    
+    -- Remove highlights antigos se o personagem mudou
     if ESPBoxes[player] then
-        if ESPBoxes[player].Adornee ~= char:FindFirstChild("Head") then
+        if ESPBoxes[player].Adornee ~= char then
             ESPBoxes[player]:Destroy()
             ESPBoxes[player] = nil
         end
     end
-    if char:FindFirstChild("Head") and not ESPBoxes[player] then
-        local box = Instance.new("BillboardGui", ScreenGui)
-        box.Adornee = char.Head
-        box.Size = UDim2.new(0,100,0,30)
-        box.AlwaysOnTop = true
-        local label = Instance.new("TextLabel", box)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.Text = player.Name
-        label.TextColor3 = Color3.fromRGB(255,80,80)
-        label.TextStrokeTransparency = 0.7
-        label.Font = Enum.Font.GothamBold
-        label.TextSize = 16
-        ESPBoxes[player] = box
+    
+    -- Cria o Highlight se não existir ainda
+    if not ESPBoxes[player] and char then
+        local highlight = Instance.new("Highlight", ScreenGui)
+        highlight.Adornee = char
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Vermelho
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.2 -- Mais visível
+        highlight.OutlineTransparency = 0 -- Contorno branco
+        ESPBoxes[player] = highlight
     end
 end
 
@@ -189,7 +187,7 @@ RunService.RenderStepped:Connect(function()
     end
     -- Remove ESP de quem saiu/morreu
     for p,esp in pairs(ESPBoxes) do
-        if not p or not p.Parent or not p.Character or not p.Character:FindFirstChild("Head") then
+        if not p or not p.Parent or not p.Character then
             if esp then esp:Destroy() end
             ESPBoxes[p] = nil
         end
