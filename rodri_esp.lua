@@ -1,7 +1,7 @@
 --[[
-    Tudo em Um: Aimbot + ESP + GUI Minimizar (Roblox)
-    Atalhos: J (abrir/minimizar menu), X (toggle aimbot), C (toggle esp)
-    Criado por Copilot | Para fins educacionais e testes locais!
+    Script Roblox Completo: Aimbot, ESP e GUI Minimizar
+    Menu: J | Aimbot: X | ESP: C
+    Por Copilot - Para estudo/testes locais!
 ]]
 
 -- Serviços
@@ -48,10 +48,10 @@ MinButton.BorderSizePixel = 0
 
 local OpenButton = Instance.new("TextButton")
 OpenButton.Parent = ScreenGui
-OpenButton.Size = UDim2.new(0,120,0,32)
+OpenButton.Size = UDim2.new(0,140,0,32)
 OpenButton.Position = UDim2.new(0,50,0,80)
 OpenButton.BackgroundColor3 = Color3.fromRGB(60,60,80)
-OpenButton.Text = "Abrir Aimbot&ESP"
+OpenButton.Text = "Abrir Menu (J)"
 OpenButton.TextColor3 = Color3.fromRGB(255,255,255)
 OpenButton.Font = Enum.Font.GothamBold
 OpenButton.TextSize = 15
