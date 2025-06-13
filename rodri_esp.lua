@@ -1,52 +1,24 @@
---[[ 
- UNIVERSAL FPS AIMBOT + ESP + MENU 
- Menu: J | Aimbot: X (segure direito) | ESP: C (inimigos em vermelho)
- Feito para funcionar em FPS customizados (ex: Gun Grounds FFA)
-]]
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
--- Detecta inimigo: tenta por Team, TeamColor, senão marca todo mundo menos você
+-- Detecta se é inimigo
 local function isEnemy(player)
     if player == LocalPlayer then return false end
-    if player.Team and LocalPlayer.Team and player.Team ~= LocalPlayer.Team then return true end
-    if player.TeamColor and LocalPlayer.TeamColor and player.TeamColor ~= LocalPlayer.TeamColor then return true end
-    -- Se não há times, considera todos menos você como inimigos
-    if not player.Team and not player.TeamColor then return true end
-    return false
-end
-
--- Tenta buscar partes válidas da cabeça (Head, UpperTorso, Torso, Body)
-local function getHead(character)
-    local possible = {"Head", "head", "UpperTorso", "Torso", "Body", "body", "Main", "MainPart"}
-    for _,name in ipairs(possible) do
-        if character:FindFirstChild(name) then return character[name] end
+    if player.Team ~= nil and LocalPlayer.Team ~= nil then
+        return player.Team ~= LocalPlayer.Team
     end
-    -- Procura primeiro BasePart
-    for _,v in ipairs(character:GetChildren()) do
-        if v:IsA("BasePart") then return v end
+    if player.TeamColor ~= nil and LocalPlayer.TeamColor ~= nil then
+        return player.TeamColor ~= LocalPlayer.TeamColor
     end
-    return nil
-end
-
--- Tenta buscar partes do corpo para ESP (todas BasePart exceto HumanoidRootPart)
-local function getBodyParts(character)
-    local parts = {}
-    for _,v in ipairs(character:GetChildren()) do
-        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
-            table.insert(parts, v)
-        end
-    end
-    return parts
+    return player ~= LocalPlayer
 end
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "UniversalFPSAimbotESP"
+ScreenGui.Name = "UniversalAimbotESP"
 pcall(function() ScreenGui.Parent = gethui and gethui() or game.CoreGui end)
 
 local MainFrame = Instance.new("Frame")
@@ -58,10 +30,10 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(30,30,40)
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1,0,0,32)
 Title.BackgroundColor3 = Color3.fromRGB(60,60,80)
-Title.Text = "UNIVERSAL FPS Aimbot & ESP"
+Title.Text = "UNIVERSAL Aimbot & ESP"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.TextSize = 17
 
 local MinButton = Instance.new("TextButton", MainFrame)
 MinButton.Size = UDim2.new(0,32,0,32)
@@ -105,6 +77,7 @@ local AimbotON = false
 local ESPON = false
 local ESPBoxes = {}
 
+-- Atualizadores de botão
 local function updateAimbotButton()
     AimbotToggle.Text = "Aimbot: " .. (AimbotON and "ON" or "OFF") .. " [X]"
     AimbotToggle.BackgroundColor3 = AimbotON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
@@ -170,25 +143,26 @@ function CriarESP(player)
     if not char then return end
     if not ESPBoxes[player] then ESPBoxes[player] = {} end
     -- Caixa vermelha em cada parte do corpo
-    for _,part in ipairs(getBodyParts(char)) do
-        if not ESPBoxes[player][part] then
-            local box = Instance.new("BoxHandleAdornment")
-            box.Name = "ESPBox"
-            box.Adornee = part
-            box.AlwaysOnTop = true
-            box.ZIndex = 10
-            box.Size = part.Size
-            box.Color3 = Color3.fromRGB(255,0,0)
-            box.Transparency = 0.7
-            box.Parent = part
-            ESPBoxes[player][part] = box
+    for _,part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            if not ESPBoxes[player][part] then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Name = "ESPBox"
+                box.Adornee = part
+                box.AlwaysOnTop = true
+                box.ZIndex = 10
+                box.Size = part.Size
+                box.Color3 = Color3.fromRGB(255,0,0)
+                box.Transparency = 0.7
+                box.Parent = part
+                ESPBoxes[player][part] = box
+            end
         end
     end
     -- Nome acima da cabeça
-    local head = getHead(char)
-    if head and not ESPBoxes[player].NameGui then
+    if char:FindFirstChild("Head") and not ESPBoxes[player].NameGui then
         local gui = Instance.new("BillboardGui")
-        gui.Adornee = head
+        gui.Adornee = char.Head
         gui.Size = UDim2.new(0,100,0,30)
         gui.AlwaysOnTop = true
         local label = Instance.new("TextLabel", gui)
@@ -199,7 +173,7 @@ function CriarESP(player)
         label.TextStrokeTransparency = 0.6
         label.Font = Enum.Font.GothamBold
         label.TextSize = 16
-        gui.Parent = head
+        gui.Parent = char.Head
         ESPBoxes[player].NameGui = gui
     end
 end
@@ -216,17 +190,14 @@ end
 function JogadorMaisProximo()
     local prox, dist = nil, math.huge
     for _,p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and isEnemy(p) and p.Character then
-            local head = getHead(p.Character)
-            if head then
-                local pos, onscreen = Camera:WorldToViewportPoint(head.Position)
-                if onscreen then
-                    local mousePos = UIS:GetMouseLocation()
-                    local d = (Vector2.new(pos.X,pos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
-                    if d < dist and d < 200 then
-                        prox = p
-                        dist = d
-                    end
+        if p ~= LocalPlayer and isEnemy(p) and p.Character and p.Character:FindFirstChild("Head") then
+            local pos, onscreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+            if onscreen then
+                local mousePos = UIS:GetMouseLocation()
+                local d = (Vector2.new(pos.X,pos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
+                if d < dist and d < 200 then
+                    prox = p
+                    dist = d
                 end
             end
         end
@@ -243,18 +214,15 @@ RunService.RenderStepped:Connect(function()
     end
     -- Limpa ESP de quem saiu/morreu/não é inimigo
     for p,_ in pairs(ESPBoxes) do
-        if not p or not p.Parent or not p.Character or not getHead(p.Character) or not isEnemy(p) then
+        if not p or not p.Parent or not p.Character or not p.Character:FindFirstChild("Head") or not isEnemy(p) then
             RemoverESP(p)
         end
     end
     -- Aimbot
     if AimbotON and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local alvo = JogadorMaisProximo()
-        if alvo and alvo.Character then
-            local head = getHead(alvo.Character)
-            if head then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-            end
+        if alvo and alvo.Character and alvo.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvo.Character.Head.Position)
         end
     end
 end)
