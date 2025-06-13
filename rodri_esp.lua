@@ -1,14 +1,40 @@
+--[[
+    UNIVERSAL AIMBOT + ESP (ENEMY) + MENU [J]
+    - ESP: Destaca só inimigos, boneco inteiro em vermelho, nome em vermelho.
+    - Menu: Minimizar/abrir com J, arrastável
+    - Aimbot: X | ESP: C
+    Por Copilot | Educacional/teste local!
+]]
 
+-- Serviços
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
+-- Detecta time de um player (suporta Team, TeamColor e Neutral)
+local function getTeam(player)
+    if player.Neutral then return nil end
+    return player.Team or player.TeamColor
+end
+
+local function isEnemy(player)
+    if not player or player == LocalPlayer then return false end
+    local myTeam, theirTeam = getTeam(LocalPlayer), getTeam(player)
+    if (myTeam and theirTeam and myTeam ~= theirTeam) or (not myTeam and theirTeam) or (myTeam and not theirTeam) then
+        return true
+    elseif not myTeam and not theirTeam then
+        -- Se ambos são neutros, não são inimigos
+        return false
+    end
+    return false
+end
+
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TudoEmUmGui"
-ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "GlobalAimbotESP"
+pcall(function() ScreenGui.Parent = gethui and gethui() or game.CoreGui end)
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -23,7 +49,7 @@ Title.Parent = MainFrame
 Title.Size = UDim2.new(1,0,0,32)
 Title.Position = UDim2.new(0,0,0,0)
 Title.BackgroundColor3 = Color3.fromRGB(60,60,80)
-Title.Text = "Aimbot & ESP"
+Title.Text = "GLOBAL Aimbot & ESP"
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -79,7 +105,6 @@ local AimbotON = false
 local ESPON = false
 local ESPBoxes = {}
 
--- Funções auxiliares
 local function updateAimbotButton()
     AimbotToggle.Text = "Aimbot: " .. (AimbotON and "ON" or "OFF") .. " [X]"
     AimbotToggle.BackgroundColor3 = AimbotON and Color3.fromRGB(0,200,50) or Color3.fromRGB(80,80,120)
@@ -133,31 +158,61 @@ ESPToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Função ESP
+-- ESP aprimorado (BoxHandleAdornment e nome em vermelho)
 function CriarESP(player)
     if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    if ESPBoxes[player] then
-        if ESPBoxes[player].Adornee ~= char:FindFirstChild("Head") then
-            ESPBoxes[player]:Destroy()
+    if not isEnemy(player) then
+        if ESPBoxes[player] then
+            for _,v in pairs(ESPBoxes[player]) do if v then v:Destroy() end end
             ESPBoxes[player] = nil
         end
+        return
     end
-    if char:FindFirstChild("Head") and not ESPBoxes[player] then
-        local box = Instance.new("BillboardGui", ScreenGui)
-        box.Adornee = char.Head
-        box.Size = UDim2.new(0,100,0,30)
-        box.AlwaysOnTop = true
-        local label = Instance.new("TextLabel", box)
+    local char = player.Character
+    if not char then return end
+    if not ESPBoxes[player] then ESPBoxes[player] = {} end
+    for _,part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            if not ESPBoxes[player][part] then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Name = "ESPBox"
+                box.Adornee = part
+                box.AlwaysOnTop = true
+                box.ZIndex = 10
+                box.Size = part.Size
+                box.Color3 = Color3.fromRGB(255,0,0)
+                box.Transparency = 0.7
+                box.Parent = part
+                ESPBoxes[player][part] = box
+            end
+        end
+    end
+    -- Nome acima da cabeça
+    if char:FindFirstChild("Head") and not ESPBoxes[player].NameGui then
+        local gui = Instance.new("BillboardGui")
+        gui.Adornee = char.Head
+        gui.Size = UDim2.new(0,100,0,30)
+        gui.AlwaysOnTop = true
+        local label = Instance.new("TextLabel", gui)
         label.Size = UDim2.new(1,0,1,0)
         label.BackgroundTransparency = 1
         label.Text = player.Name
-        label.TextColor3 = Color3.fromRGB(255,80,80)
-        label.TextStrokeTransparency = 0.7
+        label.TextColor3 = Color3.fromRGB(255,0,0)
+        label.TextStrokeTransparency = 0.6
         label.Font = Enum.Font.GothamBold
         label.TextSize = 16
-        ESPBoxes[player] = box
+        gui.Parent = char.Head
+        ESPBoxes[player].NameGui = gui
+    end
+end
+
+-- Remove ESP de quem saiu, morreu ou não é mais inimigo
+function RemoverESP(player)
+    if ESPBoxes[player] then
+        for _,v in pairs(ESPBoxes[player]) do
+            if v and typeof(v) == "Instance" then pcall(function() v:Destroy() end) end
+        end
+        ESPBoxes[player] = nil
     end
 end
 
@@ -165,7 +220,7 @@ end
 function JogadorMaisProximo()
     local prox, dist = nil, math.huge
     for _,p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+        if p ~= LocalPlayer and isEnemy(p) and p.Character and p.Character:FindFirstChild("Head") then
             local pos, onscreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
             if onscreen then
                 local mousePos = UIS:GetMouseLocation()
@@ -188,11 +243,10 @@ RunService.RenderStepped:Connect(function()
             pcall(function() CriarESP(p) end)
         end
     end
-    -- Remove ESP de quem saiu/morreu
-    for p,esp in pairs(ESPBoxes) do
-        if not p or not p.Parent or not p.Character or not p.Character:FindFirstChild("Head") then
-            if esp then esp:Destroy() end
-            ESPBoxes[p] = nil
+    -- Remove ESP de quem não é mais inimigo, morreu ou saiu
+    for p,_ in pairs(ESPBoxes) do
+        if not p or not p.Parent or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") or not isEnemy(p) then
+            RemoverESP(p)
         end
     end
     -- Aimbot
@@ -230,6 +284,5 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- Inicialização dos botões
 updateAimbotButton()
 updateESPButton()
